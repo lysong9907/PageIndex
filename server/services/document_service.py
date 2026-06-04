@@ -4,9 +4,12 @@ import json
 import time
 import hashlib
 import asyncio
+import logging
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, Dict
+
+logger = logging.getLogger(__name__)
 
 RESULTS_DIR = Path(__file__).parent.parent.parent / "results"
 UPLOADS_DIR = Path(__file__).parent.parent.parent / "uploads"
@@ -180,6 +183,7 @@ print("DONE")
 
     if proc.returncode != 0:
         error_msg = stderr.decode('utf-8', errors='replace').strip()
+        logger.error(f"PDF subprocess failed: {error_msg}")
         try:
             os.unlink(result_file.name)
         except Exception:
@@ -330,9 +334,11 @@ def _count_nodes(nodes):
 # ========== Orchestration ==========
 
 def _get_config_values():
-    """Read current config from .env and config.yaml."""
+    """Read current config from environment variables and config.yaml."""
     from dotenv import load_dotenv
-    load_dotenv(Path(__file__).parent.parent.parent / ".env")
+    env_path = Path(__file__).parent.parent.parent / ".env"
+    if env_path.exists():
+        load_dotenv(env_path)
     import yaml
     config_path = Path(__file__).parent.parent.parent / "pageindex" / "config.yaml"
     with open(config_path, "r") as f:
@@ -452,6 +458,7 @@ async def orchestrate_processing(document_id: str, file_path: str, file_type: st
         tracker.complete(document_id, result)
 
     except Exception as e:
+        logger.exception(f"Processing failed for {document_id}: {e}")
         meta = load_all_metadata().get(document_id, {})
         meta["status"] = "failed"
         meta["error"] = str(e)

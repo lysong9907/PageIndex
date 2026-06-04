@@ -5,7 +5,9 @@ from pathlib import Path
 from openai import AsyncOpenAI
 from dotenv import load_dotenv
 
-load_dotenv(Path(__file__).parent.parent.parent / ".env")
+_env_path = Path(__file__).parent.parent.parent / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path)
 
 from server.services.tree_service import load_tree, get_skeleton, find_nodes_by_ids
 

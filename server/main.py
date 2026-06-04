@@ -8,7 +8,9 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from dotenv import load_dotenv
-load_dotenv(PROJECT_ROOT / ".env")
+_env_path = PROJECT_ROOT / ".env"
+if _env_path.exists():
+    load_dotenv(_env_path)
 
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
