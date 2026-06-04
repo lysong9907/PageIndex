@@ -9,4 +9,4 @@ cd ..
 
 # Start backend (Render sets PORT env var)
 PORT=${PORT:-8001}
-uvicorn server.main:app --host 0.0.0.0 --port $PORT
+python -m uvicorn server.main:app --host 0.0.0.0 --port $PORT
