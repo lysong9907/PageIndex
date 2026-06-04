@@ -144,6 +144,8 @@ async def process_pdf(file_path: str, opt_dict: dict) -> dict:
     import subprocess
     import tempfile
 
+    print(f"[process_pdf] Starting: file={file_path}")
+
     # Write opt_dict to a temp file
     opt_file = tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False, encoding='utf-8')
     json.dump(opt_dict, opt_file, ensure_ascii=False)
@@ -174,6 +176,11 @@ print("DONE")
         stderr=asyncio.subprocess.PIPE,
     )
     stdout, stderr = await proc.communicate()
+
+    print(f"[process_pdf] Subprocess returncode={proc.returncode}")
+    print(f"[process_pdf] stdout={stdout.decode('utf-8', errors='replace')[:500]}")
+    if proc.returncode != 0:
+        print(f"[process_pdf] stderr={stderr.decode('utf-8', errors='replace')[:1000]}")
 
     # Clean up opt file
     try:
@@ -351,6 +358,9 @@ async def orchestrate_processing(document_id: str, file_path: str, file_type: st
     tracker = progress_tracker
     cfg = _get_config_values()
 
+    print(f"[Orchestrate] START doc={document_id} type={file_type} file={file_path}")
+    print(f"[Orchestrate] config: model={cfg.get('model')}, api_key_set={bool(os.getenv('CHATGPT_API_KEY'))}")
+
     tracker.update(document_id, "uploading", 5, "File received, starting processing...")
     await asyncio.sleep(0.5)
 
@@ -371,7 +381,9 @@ async def orchestrate_processing(document_id: str, file_path: str, file_type: st
                 "if_add_node_text": cfg.get("if_add_node_text", "no"),
             }
 
+            print(f"[Orchestrate] Calling process_pdf...")
             result = await process_pdf(file_path, opt_dict)
+            print(f"[Orchestrate] process_pdf done, result keys: {list(result.keys())}")
 
         elif file_type == "markdown":
             tracker.update(document_id, "parsing_markdown", 15, "Parsing Markdown structure...")
@@ -458,7 +470,9 @@ async def orchestrate_processing(document_id: str, file_path: str, file_type: st
         tracker.complete(document_id, result)
 
     except Exception as e:
-        logger.exception(f"Processing failed for {document_id}: {e}")
+        print(f"[Orchestrate] FAILED: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         meta = load_all_metadata().get(document_id, {})
         meta["status"] = "failed"
         meta["error"] = str(e)
