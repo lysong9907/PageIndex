@@ -1,0 +1,43 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Node
+web/node_modules/
+
+# Data directories (user-generated content)
+uploads/
+results/
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+server/static/
+
+# Test data (large PDFs)
+tests/pdfs/
+
+# Large media files
+*.mp4
+*.avi
+*.mov
+
+# IDE
+.vscode/
+.idea/
+
+# Claude Code
+.claude/

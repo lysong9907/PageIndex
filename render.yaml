@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: pageindex
+    runtime: python
+    buildCommand: pip install -r requirements.txt && cd web && npm install && npm run build && cd ..
+    startCommand: uvicorn server.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: CHATGPT_API_KEY
+        sync: false
+      - key: API_BASE_URL
+        value: https://dashscope.aliyuncs.com/compatible-mode/v1
+      - key: LLM_MODEL
+        value: qwen-plus
+      - key: PYTHON_VERSION
+        value: 3.14.0
