@@ -187,21 +187,22 @@ print("DONE")
     proc = await asyncio.create_subprocess_exec(
         sys.executable, '-c', script,
         stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,  # merge stderr into stdout for real-time output
     )
     print(f"[process_pdf] Subprocess PID={proc.pid}, waiting for output...")
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
-    except asyncio.TimeoutError:
-        print(f"[process_pdf] TIMEOUT after 300s, killing subprocess")
-        proc.kill()
-        await proc.wait()
-        raise RuntimeError("PDF processing timed out after 300 seconds")
 
+    # Stream subprocess output in real-time so it shows in Render logs
+    output_lines = []
+    try:
+        async for line in proc.stdout:
+            decoded = line.decode('utf-8', errors='replace').rstrip()
+            print(f"[pdf-subprocess] {decoded}")
+            output_lines.append(decoded)
+    except Exception as e:
+        print(f"[process_pdf] Error reading subprocess output: {e}")
+
+    await asyncio.wait_for(proc.wait(), timeout=600)
     print(f"[process_pdf] Subprocess returncode={proc.returncode}")
-    print(f"[process_pdf] stdout={stdout.decode('utf-8', errors='replace')[:500]}")
-    if proc.returncode != 0:
-        print(f"[process_pdf] stderr={stderr.decode('utf-8', errors='replace')[:1000]}")
 
     # Clean up opt file
     try:
@@ -210,8 +211,8 @@ print("DONE")
         pass
 
     if proc.returncode != 0:
-        error_msg = stderr.decode('utf-8', errors='replace').strip()
-        logger.error(f"PDF subprocess failed: {error_msg}")
+        error_msg = '\n'.join(output_lines[-20:])  # last 20 lines of output
+        print(f"[process_pdf] FAILED: {error_msg}")
         try:
             os.unlink(result_file.name)
         except Exception:
