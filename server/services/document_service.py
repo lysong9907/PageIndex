@@ -155,10 +155,24 @@ async def process_pdf(file_path: str, opt_dict: dict) -> dict:
     result_file.close()
 
     script = f'''
-import sys, json
+import sys, json, os
 sys.path.insert(0, r"{Path(__file__).parent.parent.parent}")
+from dotenv import load_dotenv
+from pathlib import Path
+env_path = Path(r"{Path(__file__).parent.parent.parent}") / ".env"
+if env_path.exists():
+    load_dotenv(env_path)
+else:
+    # On Render, env vars are already set in the parent process — pass them explicitly
+    os.environ["CHATGPT_API_KEY"] = os.environ.get("CHATGPT_API_KEY", "")
+    os.environ["API_BASE_URL"] = os.environ.get("API_BASE_URL", "")
+    os.environ["LLM_MODEL"] = os.environ.get("LLM_MODEL", "")
 from types import SimpleNamespace
 from pageindex.page_index import page_index_main
+
+print(f"[subprocess] API_KEY set: {bool(os.getenv('CHATGPT_API_KEY'))}")
+print(f"[subprocess] BASE_URL: {os.getenv('API_BASE_URL')}")
+print(f"[subprocess] MODEL: {os.getenv('LLM_MODEL')}")
 
 with open(r"{opt_file.name}", "r", encoding="utf-8") as f:
     opt_dict = json.load(f)
@@ -175,7 +189,14 @@ print("DONE")
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
-    stdout, stderr = await proc.communicate()
+    print(f"[process_pdf] Subprocess PID={proc.pid}, waiting for output...")
+    try:
+        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=300)
+    except asyncio.TimeoutError:
+        print(f"[process_pdf] TIMEOUT after 300s, killing subprocess")
+        proc.kill()
+        await proc.wait()
+        raise RuntimeError("PDF processing timed out after 300 seconds")
 
     print(f"[process_pdf] Subprocess returncode={proc.returncode}")
     print(f"[process_pdf] stdout={stdout.decode('utf-8', errors='replace')[:500]}")
