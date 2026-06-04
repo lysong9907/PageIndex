@@ -12,4 +12,4 @@ services:
       - key: LLM_MODEL
         value: qwen-plus
       - key: PYTHON_VERSION
-        value: 3.14.0
+        value: 3.12.0
