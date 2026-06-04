@@ -88,7 +88,9 @@ async def upload_document(file: UploadFile = File(...)):
 
     # Create progress tracker and start background task
     progress_tracker.create(doc_id)
-    asyncio.create_task(orchestrate_processing(doc_id, str(file_path), file_type))
+    print(f"[Upload] Creating task for doc={doc_id} type={file_type}")
+    task = asyncio.create_task(orchestrate_processing(doc_id, str(file_path), file_type))
+    task.add_done_callback(lambda t: print(f"[Upload] Task done for doc={doc_id}, exception={t.exception()}"))
 
     return {
         "document_id": doc_id,

@@ -342,14 +342,18 @@ def _count_nodes(nodes):
 
 def _get_config_values():
     """Read current config from environment variables and config.yaml."""
+    print("[_get_config_values] START")
     from dotenv import load_dotenv
     env_path = Path(__file__).parent.parent.parent / ".env"
+    print(f"[_get_config_values] env_path={env_path} exists={env_path.exists()}")
     if env_path.exists():
         load_dotenv(env_path)
     import yaml
     config_path = Path(__file__).parent.parent.parent / "pageindex" / "config.yaml"
+    print(f"[_get_config_values] config_path={config_path} exists={config_path.exists()}")
     with open(config_path, "r") as f:
         cfg = yaml.safe_load(f)
+    print(f"[_get_config_values] cfg={cfg}")
     return cfg
 
 
