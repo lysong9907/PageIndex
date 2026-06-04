@@ -11,5 +11,3 @@ services:
         value: https://dashscope.aliyuncs.com/compatible-mode/v1
       - key: LLM_MODEL
         value: qwen-plus
-      - key: PYTHON_VERSION
-        value: 3.12.0
